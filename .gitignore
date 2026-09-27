@@ -1,0 +1,7 @@
+# secrets
+.env
+
+# downloaded data and runtime
+data/
+__pycache__/
+*.log
