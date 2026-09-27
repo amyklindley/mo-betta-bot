@@ -49,9 +49,13 @@ def npc_embed(d: dict):
     _field(e, "Level", d["level"], True)
     _field(e, "HP", d["hp"], True)
     _field(e, "Drops", d["drops"])
+    _field(e, "Sells", d.get("sells"))
+    _field(e, "Buys", d.get("buys"))
     _field(e, "Quests", d["quests"])
     _field(e, "Faction", d["factions"], True)
     _field(e, "Opposes", d["opposing"], True)
+    if d.get("dialog"):
+        _field(e, "Dialogue", d["dialog"])
     e.set_footer(text="Source: Monsters and Memories community wiki")
     return e
 

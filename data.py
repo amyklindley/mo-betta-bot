@@ -122,6 +122,11 @@ class Store:
         for n in self.npcs:
             for loot in n.get("loot", []):
                 self.drops_by_mob.setdefault(n["name"].lower(), set()).add(loot)
+        # who sells what (from merchant pages)
+        self.sellers_of: dict[str, list[str]] = {}
+        for n in self.npcs:
+            for it in n.get("sells", []):
+                self.sellers_of.setdefault(it.lower(), []).append(n["name"])
         # recipes that use an item
         self.recipes_using: dict[str, list[dict]] = {}
         for r in self.recipes:

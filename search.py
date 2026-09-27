@@ -56,11 +56,17 @@ def describe_item(store: Store, r: dict) -> dict:
             drops.append(f"{mob} ({loc})" if loc else mob)
     used_in = [x["name"] for x in store.recipes_using.get(r["name"].lower(), [])]
     made_by = [x for x in store.recipe_by_name.get(r["name"].lower(), [])]
+    sold_by = list(r.get("sold_by", []))
+    for m in store.sellers_of.get(r["name"].lower(), []):  # merchant pages know more than item pages
+        if m not in sold_by:
+            n = store.npc_by_name.get(m.lower())
+            loc = (n or {}).get("location") or (n or {}).get("zone") or ""
+            sold_by.append(f"{m} ({loc})" if loc else m)
     return {
         "name": r["name"], "url": r["url"], "description": r.get("description", ""),
         "slot": r.get("slot", ""), "classes": expand_classes(r.get("classes", "")), "races": r.get("races", ""),
         "stats": stat_line, "effect": r.get("effect", ""), "flags": ", ".join(r.get("flags", [])),
-        "weight": r.get("weight", ""), "drops": drops[:12], "sold_by": r.get("sold_by", [])[:6],
+        "weight": r.get("weight", ""), "drops": drops[:12], "sold_by": sold_by[:8],
         "quest_reward": r.get("quest_reward", [])[:6], "used_in": sorted(set(used_in))[:10],
         "made_by": [f"{m['skill']} (trivial {m['trivial']})" for m in made_by][:4], "id": r.get("id", ""),
     }
@@ -94,7 +100,8 @@ def describe_npc(store: Store, r: dict) -> dict:
         "name": r["name"], "url": r["url"], "zone": r.get("zone", ""), "location": r.get("location", ""),
         "race": r.get("race", ""), "class": r.get("class", ""), "level": r.get("level", ""), "hp": r.get("hp", ""),
         "description": _clip(r.get("description", ""), 300), "drops": drops[:15], "factions": r.get("factions", [])[:5],
-        "opposing": r.get("opposing_factions", [])[:5], "quests": quests[:8],
+        "opposing": r.get("opposing_factions", [])[:5], "quests": quests[:8], "kind": r.get("kind", "npc"),
+        "sells": r.get("sells", [])[:25], "buys": r.get("buys", [])[:10], "dialog": _clip(r.get("dialog", ""), 400),
     }
 
 
