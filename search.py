@@ -56,7 +56,8 @@ def describe_item(store: Store, r: dict) -> dict:
             drops.append(f"{mob} ({loc})" if loc else mob)
     used_in = [x["name"] for x in store.recipes_using.get(r["name"].lower(), [])]
     made_by = [x for x in store.recipe_by_name.get(r["name"].lower(), [])]
-    sold_by = list(r.get("sold_by", []))
+    zones = {z.strip().lower() for n in store.npcs for z in n.get("zone", "").split(",")}
+    sold_by = [s for s in r.get("sold_by", []) if s.lower() not in zones]  # item pages group vendors under zone headers
     for m in store.sellers_of.get(r["name"].lower(), []):  # merchant pages know more than item pages
         if m not in sold_by:
             n = store.npc_by_name.get(m.lower())
