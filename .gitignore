@@ -1,7 +1,8 @@
 # secrets
 .env
 
-# downloaded data and runtime
+# downloaded data, per-server settings and runtime
 data/
+config.json
 __pycache__/
 *.log

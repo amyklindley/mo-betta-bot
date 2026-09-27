@@ -13,7 +13,13 @@ mobs, 117 quest walkthroughs and 1,400 recipes. Slash commands with autocomplete
 | `/drops <mob>` | everything a mob drops |
 | `/gear <class> [slot] [stat]` | best items a class can wear, optionally one slot, ranked by one stat |
 | `/recipe <name>` | skill, trivial, station, ingredients |
-| `/mobetta` | data freshness and links |
+| `/mobetta about` | data freshness, where it answers, links |
+| `/mobetta setup [channel] [public]` | admins only: lock the bot to one channel (default: the one you run it in); `public: True` makes answers visible to everyone |
+| `/mobetta anywhere` | admins only: lift the channel limit |
+
+Answers are private by default: only the person who asked sees them, with Discord's
+"Dismiss message" link, so the bot never clutters a channel. Asking from the wrong
+channel gets a private pointer to the right one.
 
 ## Run it
 
