@@ -38,9 +38,22 @@ channel gets a private pointer to the right one.
    `data/`; after that it checks GitHub for newer copies every six hours. The bot never
    touches the wiki itself.
 
-The bot only runs while that script runs. For an always-on bot, run it on any small
-always-on machine: a spare PC, a Raspberry Pi, or a $5/month VPS. It needs no database
-and about 150 MB of RAM.
+The bot only runs while that script runs. For an always-on bot, put it on any small
+Linux box: a Raspberry Pi, a $4/month VPS, or Google Cloud's permanently free e2-micro.
+It needs no database and about 150 MB of RAM.
+
+## Run it in the cloud (always on)
+
+On a fresh Debian or Ubuntu machine, one command does everything: installs Python, clones
+this repo to `/opt/mobetta`, asks for the token once, and installs a service that starts the
+bot at boot and restarts it if it dies.
+
+```
+curl -fsSL https://raw.githubusercontent.com/amyklindley/mo-betta-bot/main/deploy.sh | bash
+```
+
+Re-running the same command later updates the bot to the latest code. Logs:
+`sudo journalctl -u mobetta -f`.
 
 ## Try searches without Discord
 
