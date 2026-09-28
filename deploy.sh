@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-shot install of Mo Betta Bot on a fresh Debian/Ubuntu box (Google Cloud e2-micro, DigitalOcean, Pi...).
 #
-#   curl -fsSL https://raw.githubusercontent.com/amyklindley/mo-betta-bot/main/deploy.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/amyklindley/mo-betta-bot/main/deploy.sh -o deploy.sh && bash deploy.sh
 #
 # What it does: installs Python + git, clones the repo to /opt/mobetta, creates a virtualenv, asks for the
 # Discord token (and optional server id) once, and installs a systemd service that starts the bot on boot
@@ -14,8 +14,13 @@ SVC="mobetta"
 USER_NAME="${SUDO_USER:-$USER}"
 
 echo "== Mo Betta Bot installer =="
-sudo apt-get update -qq
-sudo apt-get install -y -qq python3 python3-venv git >/dev/null
+if [ -n "${CLOUD_SHELL:-}" ] || [ -n "${DEVSHELL_PROJECT_ID:-}" ]; then
+  echo "This is Google Cloud Shell, which is wiped when you close it. Run this on the VM instead:"
+  echo "Compute Engine -> VM instances -> SSH button on your instance, then paste the command there."
+  exit 1
+fi
+sudo apt-get update -qq </dev/null
+sudo apt-get install -y -qq python3 python3-venv git >/dev/null </dev/null
 
 if [ -d "$DIR/.git" ]; then
   echo "-- updating $DIR"
@@ -72,4 +77,4 @@ echo
 echo "Done. Useful later:"
 echo "  sudo journalctl -u $SVC -f        follow the bot's log"
 echo "  sudo systemctl restart $SVC       restart it"
-echo "  curl -fsSL $REPO/raw/main/deploy.sh | bash    update to the latest code"
+echo "  curl -fsSL $REPO/raw/main/deploy.sh -o deploy.sh && bash deploy.sh    update to the latest code"

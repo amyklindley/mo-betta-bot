@@ -49,7 +49,7 @@ this repo to `/opt/mobetta`, asks for the token once, and installs a service tha
 bot at boot and restarts it if it dies.
 
 ```
-curl -fsSL https://raw.githubusercontent.com/amyklindley/mo-betta-bot/main/deploy.sh | bash
+curl -fsSL https://raw.githubusercontent.com/amyklindley/mo-betta-bot/main/deploy.sh -o deploy.sh && bash deploy.sh
 ```
 
 Re-running the same command later updates the bot to the latest code. Logs:
