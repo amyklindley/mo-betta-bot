@@ -39,6 +39,11 @@ def main(argv: list[str]) -> None:
         print(render.text(search.drops(store, q), "drops"))
     elif kind == "gear":
         print(render.text(search.gear(store, q, argv[2] if len(argv) > 2 else None, argv[3] if len(argv) > 3 else None), "gear"))
+    elif kind == "zone":
+        z = search.zone(store, q)
+        print(render.text(search.describe_zone(store, z), "zone") if z else "not found")
+    elif kind == "sell":
+        print(render.text(search.sell(store, q, argv[2] if len(argv) > 2 else None), "sell"))
     elif kind == "recipe":
         rs = search.recipe(store, q)
         print(render.text([search.describe_recipe(r) for r in rs], "recipe") if rs else "not found")

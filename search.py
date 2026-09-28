@@ -7,6 +7,7 @@ present in the name, then close spelling (difflib).
 from __future__ import annotations
 
 import difflib
+import re
 from typing import Iterable
 
 from data import CLASS_BY_NAME, CLASS_CODES, SLOTS, Store, norm
@@ -70,6 +71,7 @@ def describe_item(store: Store, r: dict) -> dict:
         "weight": r.get("weight", ""), "drops": drops[:12], "sold_by": sold_by[:8],
         "quest_reward": r.get("quest_reward", [])[:6], "used_in": sorted(set(used_in))[:10],
         "made_by": [f"{m['skill']} (trivial {m['trivial']})" for m in made_by][:4], "id": r.get("id", ""),
+        "image": r.get("image", ""),
     }
 
 
@@ -103,6 +105,7 @@ def describe_npc(store: Store, r: dict) -> dict:
         "description": _clip(r.get("description", ""), 300), "drops": drops[:15], "factions": r.get("factions", [])[:5],
         "opposing": r.get("opposing_factions", [])[:5], "quests": quests[:8], "kind": r.get("kind", "npc"),
         "sells": r.get("sells", [])[:25], "buys": r.get("buys", [])[:10], "dialog": _clip(r.get("dialog", ""), 400),
+        "image": r.get("image", ""),
     }
 
 
@@ -197,6 +200,73 @@ def gear(store: Store, klass: str, slot: str | None = None, stat: str | None = N
         st = "  ".join(f"{k.upper()} {v}" for k, v in r.get("stats", {}).items())
         out.append({"name": r["name"], "slot": r.get("slot", ""), "stats": st, "url": r["url"]})
     return {"class": CLASS_CODES[code], "slot": slot_u or "any", "stat": key or "", "items": out, "total": len(rows)}
+
+
+# ---------------------------------------------------------------- zones
+
+def zone(store: Store, query: str) -> dict | None:
+    hit = rank(query, (z["name"] for z in store.zones), 1)
+    return store.zone_by_name.get(hit[0].lower()) if hit else None
+
+
+def zone_candidates(store: Store, query: str, limit: int = 25) -> list[str]:
+    return rank(query, (z["name"] for z in store.zones), limit) if query else [z["name"] for z in store.zones][:limit]
+
+
+def describe_zone(store: Store, z: dict) -> dict:
+    here = store.npcs_in_zone.get(norm(z["name"]), [])
+    generic = lambda n: n["name"].lower().startswith(("a ", "an "))  # "a black rat" is a mob, not a quest giver
+    givers = [n for n in here if n.get("quests") and n.get("kind") != "merchant" and not generic(n)]
+    merchants = [n for n in here if n.get("kind") == "merchant"]
+    mobs = [n for n in here if n.get("kind") != "merchant" and not n.get("quests") and n.get("loot")]
+
+    def with_loc(n: dict) -> str:
+        return f"{n['name']} ({n['location']})" if n.get("location") else n["name"]
+
+    return {
+        "name": z["name"], "url": z["url"], "description": z.get("description", ""), "level": z.get("level", ""),
+        "monsters": z.get("monsters", []), "adjacent": z.get("adjacent", []), "quests": z.get("quests", [])[:12],
+        "givers": [f"{with_loc(n)}: {', '.join(n['quests'][:2])}" for n in givers[:12]],
+        "merchants": [f"{with_loc(n)}: {', '.join(n.get('sells', [])[:4])}{'...' if len(n.get('sells', [])) > 4 else ''}" for n in merchants[:10]],
+        "mobs": [f"{n['name']}" + (f" (lvl {n['level']})" if n.get("level") else "") for n in sorted(mobs, key=lambda n: _num(n.get("level", "0")))[:20]],
+        "notable_npcs": z.get("notable_npcs", [])[:10], "notable_items": z.get("notable_items", [])[:12],
+        "image": z.get("image", ""), "map": z.get("map", ""),
+        "counts": {"npcs": len(here), "merchants": len(merchants), "quest givers": len(givers)},
+    }
+
+
+# ---------------------------------------------------------------- selling
+
+def sell(store: Store, query: str, zone_name: str | None = None) -> dict:
+    """Who buys this? Merchant pages list what they buy ('Hides', 'Bags and packs', 'about anything')."""
+    q = norm(query)
+    words = [w for w in q.split() if len(w) > 2]
+    item = store.item_by_name.get(query.lower())
+    kinds = set(words)
+    if item:  # add hints from the item itself: slot words, and a few category words from its description
+        kinds |= {w for w in norm(item.get("slot", "")).split()}
+        kinds |= {w for w in norm(item.get("description", "")).split() if w in ("hide", "hides", "pelt", "bag", "gem", "ore", "cloth", "meat", "food", "weapon", "armor", "armour", "bone", "potion", "scroll", "jewelry", "jewellery")}
+    matches: list[dict] = []
+    anything: list[dict] = []
+    for n in store.npcs:
+        if n.get("kind") != "merchant":
+            continue
+        if zone_name and norm(zone_name) not in norm(n.get("zone", "")):
+            continue
+        buys = " ".join(n.get("buys", [])).lower()
+        if not buys:
+            continue
+        if re.search(r"\b(anything|everything|all items|most items|any item)\b", buys):
+            anything.append(n)
+        elif any(k.rstrip("s") in buys for k in kinds):
+            matches.append(n)
+
+    def line(n: dict) -> str:
+        where = " · ".join(x for x in (n.get("zone", ""), n.get("location", "")) if x)
+        return f"{n['name']} ({where}) buys {', '.join(n.get('buys', [])[:3])}"
+
+    return {"query": query, "zone": zone_name or "", "matches": [line(n) for n in matches[:10]],
+            "anything": [line(n) for n in anything[:8]]}
 
 
 def _clip(s: str, n: int) -> str:

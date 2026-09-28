@@ -37,6 +37,8 @@ def item_embed(d: dict):
     _field(e, "Quest reward", d["quest_reward"])
     _field(e, "Crafted by", d["made_by"])
     _field(e, "Used in recipes", d["used_in"])
+    if d.get("image"):
+        e.set_thumbnail(url=d["image"])
     e.set_footer(text="Source: Monsters and Memories community wiki")
     return e
 
@@ -56,7 +58,37 @@ def npc_embed(d: dict):
     _field(e, "Opposes", d["opposing"], True)
     if d.get("dialog"):
         _field(e, "Dialogue", d["dialog"])
+    if d.get("image"):
+        e.set_thumbnail(url=d["image"])
     e.set_footer(text="Source: Monsters and Memories community wiki")
+    return e
+
+
+def zone_embed(d: dict):
+    meta = " · ".join(x for x in (f"levels {d['level']}" if d["level"] else "", ", ".join(d["monsters"])) if x)
+    e = _embed(d["name"], d["url"], "\n".join(x for x in (d["description"], meta) if x))
+    _field(e, "Adjacent", ", ".join(d["adjacent"]))
+    _field(e, "Quest givers here", d["givers"])
+    _field(e, "Merchants here", d["merchants"])
+    _field(e, "Quests", d["quests"])
+    _field(e, "Notable NPCs", ", ".join(d["notable_npcs"]))
+    _field(e, "Notable drops", ", ".join(d["notable_items"]))
+    _field(e, "Mobs with recorded drops", ", ".join(d["mobs"]))
+    if d.get("map"):
+        e.set_image(url=d["map"])
+    if d.get("image"):
+        e.set_thumbnail(url=d["image"])
+    c = d["counts"]
+    e.set_footer(text=f"{c['npcs']} NPCs on the wiki for this zone, {c['merchants']} merchants, {c['quest givers']} quest givers · community wiki")
+    return e
+
+
+def sell_embed(d: dict):
+    title = f"Who buys {d['query']}" + (f" in {d['zone']}" if d["zone"] else "")
+    e = _embed(title)
+    _field(e, "Buys this kind of thing", d["matches"] or "no merchant lists this specifically")
+    _field(e, "Buys about anything", d["anything"])
+    e.set_footer(text="From merchant pages on the community wiki; many merchants have no 'buys' list yet")
     return e
 
 

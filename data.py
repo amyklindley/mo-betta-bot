@@ -19,6 +19,7 @@ SOURCES = {
     "quests.json": "https://raw.githubusercontent.com/amyklindley/mo-betta-quests/main/quests.json",
     "items.json": "https://raw.githubusercontent.com/amyklindley/mo-betta-quests/main/items.json",
     "npcs.json": "https://raw.githubusercontent.com/amyklindley/mo-betta-quests/main/npcs.json",
+    "zones.json": "https://raw.githubusercontent.com/amyklindley/mo-betta-quests/main/zones.json",
     "recipes.json": "https://raw.githubusercontent.com/amyklindley/mo-betta-crafts/main/recipes.json",
 }
 CHECK_EVERY = 24 * 3600
@@ -42,6 +43,7 @@ class Store:
         self.quests: list[dict] = []
         self.items: list[dict] = []
         self.npcs: list[dict] = []
+        self.zones: list[dict] = []
         self.recipes: list[dict] = []
         self.fetched: dict[str, str] = {}
 
@@ -100,6 +102,7 @@ class Store:
         self.quests = read("quests.json", "quests")
         self.items = read("items.json", "items")
         self.npcs = read("npcs.json", "npcs")
+        self.zones = read("zones.json", "zones")
         self.recipes = read("recipes.json", "recipes") or _flatten_recipes(name="recipes.json")
         self.loaded_at = time.time()
         self._index()
@@ -122,11 +125,16 @@ class Store:
         for n in self.npcs:
             for loot in n.get("loot", []):
                 self.drops_by_mob.setdefault(n["name"].lower(), set()).add(loot)
-        # who sells what (from merchant pages)
+        # who sells what (from merchant pages), and who lives where
         self.sellers_of: dict[str, list[str]] = {}
+        self.npcs_in_zone: dict[str, list[dict]] = {}
         for n in self.npcs:
             for it in n.get("sells", []):
                 self.sellers_of.setdefault(it.lower(), []).append(n["name"])
+            for z in n.get("zone", "").split(","):
+                if z.strip():
+                    self.npcs_in_zone.setdefault(norm(z), []).append(n)
+        self.zone_by_name = {z["name"].lower(): z for z in self.zones}
         # recipes that use an item
         self.recipes_using: dict[str, list[dict]] = {}
         for r in self.recipes:

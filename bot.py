@@ -112,6 +112,10 @@ async def ac_slot(_i: discord.Interaction, cur: str):
     return choices([s.title() for s in SLOTS if cur.upper() in s])
 
 
+async def ac_zone(_i: discord.Interaction, cur: str):
+    return choices(search.zone_candidates(store, cur))
+
+
 # ---------------------------------------------------------------- commands
 
 @tree.command(name="item", description="Look up an item: stats, who can use it, where it drops, recipes")
@@ -176,6 +180,23 @@ async def cmd_recipe(i: discord.Interaction, name: str) -> None:
     await reply(i, embed=render.recipe_embed([search.describe_recipe(r) for r in rs]))
 
 
+@tree.command(name="zone", description="A zone: levels, mobs, quest givers and merchants with locations, map")
+@app_commands.describe(name="Zone name (autocompletes)")
+@app_commands.autocomplete(name=ac_zone)
+async def cmd_zone(i: discord.Interaction, name: str) -> None:
+    z = search.zone(store, name)
+    if not z:
+        return await reply(i, content=f"No zone called **{name}**.")
+    await reply(i, embed=render.zone_embed(search.describe_zone(store, z)))
+
+
+@tree.command(name="sell", description="Who buys this, and where are they?")
+@app_commands.describe(item="Item name or kind of thing, e.g. hides, gems, bags", zone="Only merchants in this zone")
+@app_commands.autocomplete(item=ac_item, zone=ac_zone)
+async def cmd_sell(i: discord.Interaction, item: str, zone: str | None = None) -> None:
+    await reply(i, embed=render.sell_embed(search.sell(store, item, zone)))
+
+
 # ---------------------------------------------------------------- /mobetta about | setup | anywhere
 
 class MoBetta(app_commands.Group):
@@ -192,7 +213,7 @@ class MoBetta(app_commands.Group):
             f"items {len(store.items)} (fetched {f.get('items.json', '?')}), npcs {len(store.npcs)} ({f.get('npcs.json', '?')}), "
             f"quests {len(store.quests)} ({f.get('quests.json', '?')}), recipes {len(store.recipes)} ({f.get('recipes.json', '?')})\n"
             f"Answers in {where}, {visibility}.\n"
-            "Commands: /item /npc /quest /where /drops /gear /recipe\n"
+            "Commands: /item /npc /quest /zone /where /drops /sell /gear /recipe\n"
             "Source: https://github.com/amyklindley/mo-betta-bot"
         )
         await i.response.send_message(msg, ephemeral=True)
