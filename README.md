@@ -9,6 +9,8 @@ mobs, 117 quest walkthroughs and 1,400 recipes. Slash commands with autocomplete
 | `/item <name>` | description, slot, classes, races, stats, effect, drops from (with the mob's location), sold by, quest reward, crafted by, used in recipes |
 | `/npc <name>` | zone and location, race/class/level, what it drops, its quests, faction |
 | `/quest <name>` | giver, zone, level, class, steps, what to say, items needed, rewards |
+| `/zone <name>` | level range, monster types, adjacent zones, quest givers and merchants in the zone with their locations, notable NPCs and drops, the zone map |
+| `/sell <item or kind> [zone]` | which merchants buy it (hides, gems, bags, weapons...) and where they stand, plus the buy-anything vendors |
 | `/where <name>` | an NPC's location, or an item's drop sources / vendors / recipe |
 | `/drops <mob>` | everything a mob drops |
 | `/gear <class> [slot] [stat]` | best items a class can wear, optionally one slot, ranked by one stat |
@@ -65,7 +67,14 @@ python cli.py gear paladin chest ac
 
 ## Data
 
-`quests.json`, `items.json`, `npcs.json` come from
+Item cards carry the wiki's item icon and NPC cards the wiki's portrait where one exists
+(about 4,000 items and 1,000 NPCs so far). Zone cards show the zone map.
+
+**Freshness:** the source repos re-scrape the wiki every night with a scheduled job and
+commit what changed; the bot picks that up within six hours. So a wiki edit is live in
+Discord by the next day with nobody touching anything.
+
+`quests.json`, `items.json`, `npcs.json`, `zones.json` come from
 [mo-betta-quests](https://github.com/amyklindley/mo-betta-quests) and `recipes.json` from
 [mo-betta-crafts](https://github.com/amyklindley/mo-betta-crafts), all scraped from the
 [Monsters and Memories community wiki](https://monstersandmemories.miraheze.org). The wiki
