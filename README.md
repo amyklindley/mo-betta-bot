@@ -44,6 +44,14 @@ The bot only runs while that script runs. For an always-on bot, put it on any sm
 Linux box: a Raspberry Pi, a $4/month VPS, or Google Cloud's permanently free e2-micro.
 It needs no database and about 150 MB of RAM.
 
+## More than one server
+
+One running bot serves any number of Discord servers. Every server that opens the invite
+link gets the same commands, and each server keeps its own settings: its own answer
+channel from `/mobetta setup`, its own public-or-private choice. Keep **Public Bot** on in
+the developer portal if other people should be able to invite it; the invite link is
+`https://discord.com/oauth2/authorize?client_id=<your application id>&scope=bot%20applications.commands&permissions=2147502080`.
+
 ## Run it in the cloud (always on)
 
 On a fresh Debian or Ubuntu machine, one command does everything: installs Python, clones

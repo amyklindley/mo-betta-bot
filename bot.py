@@ -58,16 +58,18 @@ async def daily_refresh() -> None:
 
 @client.event
 async def on_ready() -> None:
+    # Register the commands globally, so any server that invites the bot gets them (Discord takes
+    # up to an hour to show new global commands). GUILD_ID additionally pushes them to your own
+    # server right away.
+    await tree.sync()
     guild_id = os.environ.get("GUILD_ID")
     if guild_id:
         g = discord.Object(id=int(guild_id))
         tree.copy_global_to(guild=g)
         await tree.sync(guild=g)
-    else:
-        await tree.sync()
     client.loop.create_task(daily_refresh())
-    log.info("ready as %s - %d items, %d npcs, %d quests, %d recipes", client.user, len(store.items), len(store.npcs),
-             len(store.quests), len(store.recipes))
+    log.info("ready as %s in %d server(s) - %d items, %d npcs, %d quests, %d recipes", client.user, len(client.guilds),
+             len(store.items), len(store.npcs), len(store.quests), len(store.recipes))
 
 
 # ---------------------------------------------------------------- where and how to answer
