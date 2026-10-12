@@ -13,7 +13,7 @@ mobs, 117 quest walkthroughs and 1,400 recipes. Slash commands with autocomplete
 | `/sell <item or kind> [zone]` | which merchants buy it (hides, gems, bags, weapons...) and where they stand, plus the buy-anything vendors |
 | `/where <name>` | an NPC's location, or an item's drop sources / vendors / recipe |
 | `/drops <mob>` | everything a mob drops |
-| `/gear <class> [slot] [stat]` | best items a class can wear, optionally one slot, ranked by one stat |
+| `/gear <class> [slot] [stat] [source] [material] [exclude] [page]` | best items a class can wear: one slot, ranked by one stat, only dropped / quest / vendor / crafted / not crafted, names with (or without) certain words, e.g. `material:mithril` or `exclude:inlaid`; 15 per page |
 | `/recipe <name>` | skill, trivial, station, ingredients |
 | `/mobetta about` | data freshness, where it answers, links |
 | `/mobetta setup [channel] [public]` | admins only: lock the bot to one channel (default: the one you run it in); `public: True` makes answers visible to everyone |

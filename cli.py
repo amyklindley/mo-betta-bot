@@ -6,7 +6,7 @@
   python cli.py quest "bone chips"
   python cli.py where "old rankle"      python cli.py where "ashira tail"
   python cli.py drops "a grain beetle"
-  python cli.py gear paladin [slot] [stat]
+  python cli.py gear paladin [slot] [stat]            (Discord adds source / material / exclude / page filters)
   python cli.py recipe "bolt of cloth"
 """
 from __future__ import annotations

@@ -163,13 +163,21 @@ async def cmd_drops(i: discord.Interaction, mob: str) -> None:
     await reply(i, embed=render.drops_embed(search.drops(store, mob)))
 
 
-@tree.command(name="gear", description="Best gear for a class, optionally one slot or one stat")
+@tree.command(name="gear", description="Best gear for a class: by slot, stat, where it comes from, material")
 @app_commands.describe(class_name="Class", slot="Slot, e.g. Chest, Finger, Primary",
-                       stat="Rank by one stat: ac, hp, mana, str, sta, agi, dex, int, wis, cha")
+                       stat="Rank by one stat: ac, hp, mana, str, sta, agi, dex, int, wis, cha",
+                       source="Only items that are dropped, quest rewards, sold by vendors, crafted, or not crafted",
+                       material="Only names with these words, e.g. mithril, or 'copper bronze' for either",
+                       exclude="Skip names with these words, e.g. inlaid",
+                       page="Next 15: page 2, 3, ...")
 @app_commands.rename(class_name="class")
+@app_commands.choices(source=[app_commands.Choice(name=s, value=s) for s in search.GEAR_SOURCES])
 @app_commands.autocomplete(class_name=ac_class, slot=ac_slot)
-async def cmd_gear(i: discord.Interaction, class_name: str, slot: str | None = None, stat: str | None = None) -> None:
-    await reply(i, embed=render.gear_embed(search.gear(store, class_name, slot, stat)))
+async def cmd_gear(i: discord.Interaction, class_name: str, slot: str | None = None, stat: str | None = None,
+                   source: app_commands.Choice[str] | None = None, material: str | None = None,
+                   exclude: str | None = None, page: app_commands.Range[int, 1, 50] = 1) -> None:
+    await reply(i, embed=render.gear_embed(search.gear(store, class_name, slot, stat, source=source.value if source else None,
+                                                       material=material, exclude=exclude, page=page)))
 
 
 @tree.command(name="recipe", description="How is something crafted? Skill, trivial, station, ingredients")

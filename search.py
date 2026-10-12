@@ -174,11 +174,43 @@ def drops(store: Store, mob_query: str) -> dict:
     return {"name": name, "items": sorted(store.drops_by_mob.get(name.lower(), set()))[:25]}
 
 
-def gear(store: Store, klass: str, slot: str | None = None, stat: str | None = None, limit: int = 15) -> dict:
+GEAR_SOURCES = ("dropped", "quest", "vendor", "crafted", "not crafted")
+
+
+def item_sources(store: Store, r: dict) -> list[str]:
+    """Where an item comes from: any of dropped / quest / vendor / crafted (an item can be several)."""
+    out = []
+    if r.get("drops_from"):
+        out.append("dropped")
+    if r.get("quest_reward"):
+        out.append("quest")
+    if r.get("sold_by"):
+        out.append("vendor")
+    if r["name"].lower() in store.recipe_by_name or INLAID_RE.match(r["name"]):
+        out.append("crafted")
+    return out
+
+
+# Jewelcrafted "Inlaid <gem> <metal> <piece>" items: the wiki lists them as a gem-by-metal grid rather than
+# one recipe row each, so only a few land in recipe_by_name. The name pattern is unambiguous.
+INLAID_RE = re.compile(r"^Inlaid .+ (Copper|Bronze|Silver|Iron|Gold|Steel|Platinum|Mithril|Adamantite) (Ring|Earring|Necklace|Bracelet)$", re.I)
+
+
+def _words(text: str | None) -> list[str]:
+    return [w for w in re.split(r"[\s,/]+", (text or "").lower()) if w]
+
+
+def gear(store: Store, klass: str, slot: str | None = None, stat: str | None = None, limit: int = 15,
+         source: str | None = None, material: str | None = None, exclude: str | None = None, page: int = 1) -> dict:
+    """Best items a class can wear. Filters: slot; stat to rank by; where it comes from (dropped, quest,
+    vendor, crafted, not crafted); material words the name must contain (e.g. "mithril" or "copper bronze"
+    for either); words the name must not contain. Pages of `limit`."""
     code = CLASS_BY_NAME.get(klass.lower().strip())
     if not code:
         return {"error": f"unknown class '{klass}'; try one of {', '.join(CLASS_CODES.values())}"}
     slot_u = (slot or "").upper().strip()
+    src = (source or "").lower().strip()
+    want, avoid = _words(material), _words(exclude)
     rows = []
     for r in store.items:
         cl = r.get("classes", "").upper()
@@ -188,18 +220,31 @@ def gear(store: Store, klass: str, slot: str | None = None, stat: str | None = N
             continue
         if not r.get("stats") and not r.get("effect"):
             continue
-        rows.append(r)
+        name = r["name"].lower()
+        if want and not any(w in name for w in want):
+            continue
+        if avoid and any(w in name for w in avoid):
+            continue
+        srcs = item_sources(store, r)
+        if src == "not crafted" and "crafted" in srcs:
+            continue
+        if src and src != "not crafted" and src not in srcs:
+            continue
+        rows.append((r, srcs))
     key = (stat or "").lower()
     if key:
-        rows = [r for r in rows if key in r.get("stats", {})]
-        rows.sort(key=lambda r: -_num(r["stats"].get(key, "0")))
+        rows = [(r, s) for r, s in rows if key in r.get("stats", {})]
+        rows.sort(key=lambda rs: -_num(rs[0]["stats"].get(key, "0")))
     else:
-        rows.sort(key=lambda r: -(_num(r.get("stats", {}).get("ac", "0")) + sum(_num(v) for k, v in r.get("stats", {}).items() if k in ("str", "sta", "agi", "dex", "int", "wis", "cha"))))
+        rows.sort(key=lambda rs: -(_num(rs[0].get("stats", {}).get("ac", "0")) + sum(_num(v) for k, v in rs[0].get("stats", {}).items() if k in ("str", "sta", "agi", "dex", "int", "wis", "cha"))))
+    pages = max(1, -(-len(rows) // limit))
+    page = min(max(page, 1), pages)
     out = []
-    for r in rows[:limit]:
+    for r, srcs in rows[(page - 1) * limit: page * limit]:
         st = "  ".join(f"{k.upper()} {v}" for k, v in r.get("stats", {}).items())
-        out.append({"name": r["name"], "slot": r.get("slot", ""), "stats": st, "url": r["url"]})
-    return {"class": CLASS_CODES[code], "slot": slot_u or "any", "stat": key or "", "items": out, "total": len(rows)}
+        out.append({"name": r["name"], "slot": r.get("slot", ""), "stats": st, "url": r["url"], "sources": srcs})
+    return {"class": CLASS_CODES[code], "slot": slot_u or "any", "stat": key or "", "items": out, "total": len(rows),
+            "page": page, "pages": pages, "source": src, "material": " ".join(want), "exclude": " ".join(avoid)}
 
 
 # ---------------------------------------------------------------- zones

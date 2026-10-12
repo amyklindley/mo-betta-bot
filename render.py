@@ -140,10 +140,22 @@ def gear_embed(d: dict):
     if "error" in d:
         return _embed("Gear", description=d["error"])
     title = f"{d['class']} gear" + (f" · {d['slot']}" if d["slot"] != "any" else "") + (f" · best {d['stat'].upper()}" if d["stat"] else "")
-    lines = [f"**[{i['name']}]({i['url']})** {i['slot'].lower()}\n{i['stats']}" for i in d["items"]]
+    for label, key in (("", "source"), ("", "material"), ("not ", "exclude")):
+        if d.get(key):
+            title += f" · {label}{d[key]}"
+    lines = [f"**[{i['name']}]({i['url']})** {i['slot'].lower()} {_source_tags(i.get('sources', []))}\n{i['stats']}"
+             for i in d["items"]]
     e = _embed(title, description="\n".join(lines)[:4000] or "nothing found")
-    e.set_footer(text=f"{d['total']} matching items · showing top {len(d['items'])}")
+    foot = f"{d['total']} matching items"
+    if d.get("pages", 1) > 1:
+        foot += f" · page {d['page']} of {d['pages']} (add page:{d['page'] + 1} for more)" if d["page"] < d["pages"] else f" · page {d['page']} of {d['pages']}"
+    foot += " · ⚒ crafted  💀 drops  📜 quest  🛒 vendor"
+    e.set_footer(text=foot)
     return e
+
+
+def _source_tags(sources: list[str]) -> str:
+    return "".join({"crafted": "⚒", "dropped": "💀", "quest": "📜", "vendor": "🛒"}[s] for s in sources)
 
 
 # ---------------------------------------------------------------- plain text (CLI)
