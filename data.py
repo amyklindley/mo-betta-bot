@@ -37,6 +37,19 @@ SLOTS = ["PRIMARY", "SECONDARY", "RANGE", "AMMO", "HEAD", "FACE", "EAR", "NECK",
          "FINGER", "CHEST", "BACK", "WAIST", "BELT", "LEGS", "FEET", "CHARM"]
 
 
+def looks_broken(name: str, old: bytes, new: bytes) -> bool:
+    """True when a freshly downloaded file has lost most of its entries compared with the copy on disk.
+    The wiki reorganises itself now and then and the scraper can publish an empty or gutted file; a bot
+    that swallowed one of those would answer "nothing found" to everything until someone noticed."""
+    try:
+        key = name.split(".")[0]
+        n_old = len(json.loads(old).get(key, []))
+        n_new = len(json.loads(new).get(key, []))
+    except (ValueError, AttributeError):
+        return True
+    return n_old >= 50 and n_new < 0.7 * n_old
+
+
 class Store:
     def __init__(self) -> None:
         self.loaded_at = 0.0
@@ -69,6 +82,10 @@ class Store:
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
                     body, etag = r.read(), r.headers.get("ETag", "")
+                if path.exists() and looks_broken(name, path.read_bytes(), body):
+                    log(f"data: {name} REJECTED: the new copy has far fewer entries than the one we have; keeping ours")
+                    stamps[name] = {"etag": st.get("etag", ""), "checked": now}
+                    continue
                 json.loads(body)
                 tmp = path.with_suffix(".tmp")
                 tmp.write_bytes(body)
