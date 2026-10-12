@@ -37,6 +37,14 @@ SLOTS = ["PRIMARY", "SECONDARY", "RANGE", "AMMO", "HEAD", "FACE", "EAR", "NECK",
          "FINGER", "CHEST", "BACK", "WAIST", "BELT", "LEGS", "FEET", "CHARM"]
 
 
+def _is_empty(path: Path) -> bool:
+    try:
+        d = json.loads(path.read_text("utf-8"))
+        return not d.get(path.name.split(".")[0])
+    except (OSError, ValueError, AttributeError):
+        return True
+
+
 def looks_broken(name: str, old: bytes, new: bytes) -> bool:
     """True when a freshly downloaded file has lost most of its entries compared with the copy on disk.
     The wiki reorganises itself now and then and the scraper can publish an empty or gutted file; a bot
@@ -74,7 +82,9 @@ class Store:
         for name, url in SOURCES.items():
             st = stamps.get(name, {})
             path = DATA / name
-            if not force and path.exists() and now - st.get("checked", 0) < CHECK_EVERY:
+            # A file with nothing in it (a bad scrape got through, or a fresh install) is re-fetched every
+            # time, not once a day: the bot should never sit on empty data waiting for the clock.
+            if not force and path.exists() and now - st.get("checked", 0) < CHECK_EVERY and not _is_empty(path):
                 continue
             req = urllib.request.Request(url, headers={"User-Agent": "MoBettaBot (data refresh)"})
             if st.get("etag") and path.exists():
